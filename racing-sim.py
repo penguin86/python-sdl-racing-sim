@@ -24,10 +24,17 @@ import sdl2.ext
 import math
 import time
 
-WIN_WIDTH = 640
-WIN_HEIGHT = 480
-SKY_COLOR = [0,128,255]
-FLOOR_COLOR = [64,64,64]
+RENDER_WIDTH = 128
+RENDER_HEIGHT = 96
+RENDER_SCALE = 8
+WIN_WIDTH = RENDER_WIDTH * RENDER_SCALE
+WIN_HEIGHT = RENDER_HEIGHT * RENDER_SCALE
+
+SKY_COLOR = [0,127,255]
+GRASS_COLOR = [0,127,0]
+KERB_COLOR = [255,0,0]
+ROAD_COLOR = [127,127,127]
+KERB_WIDTH = 0.05
 
 class Main:
 
@@ -85,11 +92,39 @@ class Main:
 		sdl2.SDL_SetRenderDrawColor(self.renderer, SKY_COLOR[0], SKY_COLOR[1], SKY_COLOR[2], sdl2.SDL_ALPHA_OPAQUE)
 		sdl2.SDL_RenderClear(self.renderer)
 		# Floor
-		sdl2.SDL_SetRenderDrawColor(self.renderer, FLOOR_COLOR[0], FLOOR_COLOR[1], FLOOR_COLOR[2], sdl2.SDL_ALPHA_OPAQUE)
+		sdl2.SDL_SetRenderDrawColor(self.renderer, ROAD_COLOR[0], ROAD_COLOR[1], ROAD_COLOR[2], sdl2.SDL_ALPHA_OPAQUE)
 		sdl2.SDL_RenderFillRect(self.renderer, sdl2.SDL_Rect(0, int(WIN_HEIGHT/2), WIN_WIDTH, int(WIN_HEIGHT)))
+
+		# Draw road
+		for y in range(int(RENDER_HEIGHT/2), RENDER_HEIGHT):
+			roadWidth = 0.6
+			roadWidthPixels = roadWidth * RENDER_WIDTH
+			roadCenterPixels = (RENDER_WIDTH - roadWidth) / 2
+			kerbWidth = KERB_WIDTH * RENDER_WIDTH
+
+			sdl2.SDL_SetRenderDrawColor(self.renderer, KERB_COLOR[0], KERB_COLOR[1], KERB_COLOR[2], sdl2.SDL_ALPHA_OPAQUE)
+			# Left Kerb
+			x = roadCenterPixels - roadWidthPixels / 2 - kerbWidth
+			self.drawScaledHLine(x, y, kerbWidth)
+			# Right Kerb
+			x = roadCenterPixels + roadWidthPixels / 2
+			self.drawScaledHLine(x, y, kerbWidth)
+
+			sdl2.SDL_SetRenderDrawColor(self.renderer, GRASS_COLOR[0], GRASS_COLOR[1], GRASS_COLOR[2], sdl2.SDL_ALPHA_OPAQUE)
+			# Left Grass
+			xEnd = roadCenterPixels - roadWidthPixels / 2 - kerbWidth
+			self.drawScaledHLine(0, y, xEnd) # xEnd = length, because xStart = 0
+			# Right Grass
+			x = roadCenterPixels + roadWidthPixels / 2 + kerbWidth
+			length = RENDER_WIDTH - x
+			self.drawScaledHLine(x, y, length)
 
 	def drawCar(self):
 		return
+
+	def drawScaledHLine(self, x, y, length):
+		sdl2.SDL_RenderFillRectF(self.renderer, sdl2.SDL_FRect(x * RENDER_SCALE, y * RENDER_SCALE, length * RENDER_SCALE, RENDER_SCALE))
+
 
 
 if __name__ == '__main__':
