@@ -24,19 +24,20 @@ import sdl2.ext
 import math
 import time
 
-RENDER_WIDTH = 128
-RENDER_HEIGHT = 96
-RENDER_SCALE = 8
+RENDER_WIDTH = 640
+RENDER_HEIGHT = 480
+RENDER_SCALE = 2
 WIN_WIDTH = RENDER_WIDTH * RENDER_SCALE
 WIN_HEIGHT = RENDER_HEIGHT * RENDER_SCALE
 
 SKY_COLOR = [0,127,255]
 GRASS_COLOR = [0,127,0]
-KERB_COLOR = [255,0,0]
+KERB_COLOR_1 = [255,0,0]
+KERB_COLOR_2 = [255,255,255]
 ROAD_COLOR = [127,127,127]
 KERB_WIDTH = 0.05
 PLAYER_MAX_SPEED = 1.0
-PLAYER_SPEED_INCREMENT = 1.0
+PLAYER_SPEED_INCREMENT = 0.5
 
 class Main:
 
@@ -118,13 +119,14 @@ class Main:
 			roadCenterPixels = (RENDER_WIDTH - roadWidth) / 2
 			kerbWidth = KERB_WIDTH * RENDER_WIDTH * perspectiveMult
 
-			# Calculate perspective: the lines near the user are taller than the one further away
+			# Kerb color: Calculate perspective: the lines near the user are taller than the one further away
 			# This is a modified sine, "stretched" based on the distance (the y axis)
-			colorModifier = 0
-			if math.sin(50.0 * math.pow(1.0 - perspectiveMult, 2) + self.distance * 30) > 0:
-				colorModifier = 64
+			inverter = math.cos(50.0 * math.pow(1.0 - perspectiveMult, 2) + self.distance * 30)
+			if inverter > 0.7 or inverter < -0.7:
+				sdl2.SDL_SetRenderDrawColor(self.renderer, KERB_COLOR_1[0], KERB_COLOR_1[1], KERB_COLOR_1[2], sdl2.SDL_ALPHA_OPAQUE)
+			else:
+				sdl2.SDL_SetRenderDrawColor(self.renderer, KERB_COLOR_2[0], KERB_COLOR_2[1], KERB_COLOR_2[2], sdl2.SDL_ALPHA_OPAQUE)
 
-			sdl2.SDL_SetRenderDrawColor(self.renderer, KERB_COLOR[0] + colorModifier, KERB_COLOR[1] + colorModifier, KERB_COLOR[2] + colorModifier, sdl2.SDL_ALPHA_OPAQUE)
 			# Left Kerb
 			x = roadCenterPixels - roadWidthPixels / 2 - kerbWidth
 			self.drawScaledHLine(x, y, kerbWidth)
@@ -132,7 +134,13 @@ class Main:
 			x = roadCenterPixels + roadWidthPixels / 2
 			self.drawScaledHLine(x, y, kerbWidth)
 
-			sdl2.SDL_SetRenderDrawColor(self.renderer, GRASS_COLOR[0] + colorModifier, GRASS_COLOR[1] + colorModifier, GRASS_COLOR[2] + colorModifier, sdl2.SDL_ALPHA_OPAQUE)
+			# Grass color: Calculate perspective: the lines near the user are taller than the one further away
+			# This is a modified sine, "stretched" based on the distance (the y axis)
+			if math.sin(50.0 * math.pow(1.0 - perspectiveMult, 2) + self.distance * 30) > 0:
+				sdl2.SDL_SetRenderDrawColor(self.renderer, GRASS_COLOR[0], GRASS_COLOR[1], GRASS_COLOR[2], sdl2.SDL_ALPHA_OPAQUE)
+			else:
+				sdl2.SDL_SetRenderDrawColor(self.renderer, GRASS_COLOR[0] + 63, GRASS_COLOR[1] + 63, GRASS_COLOR[2] + 63, sdl2.SDL_ALPHA_OPAQUE)
+
 			# Left Grass
 			xEnd = roadCenterPixels - roadWidthPixels / 2 - kerbWidth
 			self.drawScaledHLine(0, y, xEnd) # xEnd = length, because xStart = 0
