@@ -97,10 +97,11 @@ class Main:
 
 		# Draw road
 		for y in range(int(RENDER_HEIGHT/2), RENDER_HEIGHT):
+			perspectiveMult = (y - RENDER_HEIGHT / 2) / (RENDER_HEIGHT / 2) * 0.8 + 0.2 # Range 0.2 - 1.0
 			roadWidth = 0.6
-			roadWidthPixels = roadWidth * RENDER_WIDTH
+			roadWidthPixels = roadWidth * RENDER_WIDTH * perspectiveMult
 			roadCenterPixels = (RENDER_WIDTH - roadWidth) / 2
-			kerbWidth = KERB_WIDTH * RENDER_WIDTH
+			kerbWidth = KERB_WIDTH * RENDER_WIDTH * perspectiveMult
 
 			sdl2.SDL_SetRenderDrawColor(self.renderer, KERB_COLOR[0], KERB_COLOR[1], KERB_COLOR[2], sdl2.SDL_ALPHA_OPAQUE)
 			# Left Kerb
