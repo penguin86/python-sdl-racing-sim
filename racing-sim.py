@@ -35,6 +35,8 @@ GRASS_COLOR = [0,127,0]
 KERB_COLOR = [255,0,0]
 ROAD_COLOR = [127,127,127]
 KERB_WIDTH = 0.05
+PLAYER_MAX_SPEED = 1.0
+PLAYER_SPEED_INCREMENT = 1.0
 
 class Main:
 
@@ -48,8 +50,14 @@ class Main:
 		self.renderer = sdl2.SDL_CreateRenderer(self.window, -1,sdl2.SDL_RENDERER_ACCELERATED |sdl2.SDL_RENDERER_PRESENTVSYNC)
 		self.surface = sdl2.SDL_CreateRGBSurface(0,WIN_WIDTH,WIN_HEIGHT,32,0,0,0,0)
 
+		# Player
+		self.playerSpeed = 0.0
+		self.distance = 0.0
+
 	def run(self):
 		lastFpsCalcTime = 0
+		lastDraw = 0
+		elapsedTime = 0
 		frames = 0
 
 		running = True
@@ -60,17 +68,24 @@ class Main:
 					running = False
 					break
 
+			# Keys
 			keystate = sdl2.SDL_GetKeyboardState(None)
 			if keystate[sdl2.SDL_SCANCODE_LEFT]:
 				print("left")
 			elif keystate[sdl2.SDL_SCANCODE_RIGHT]:
 				print("right")
 			elif keystate[sdl2.SDL_SCANCODE_UP]:
-				print("accelerate")
+				self.playerSpeed = min(self.playerSpeed + PLAYER_SPEED_INCREMENT * elapsedTime, PLAYER_MAX_SPEED)
 			elif keystate[sdl2.SDL_SCANCODE_DOWN]:
-				print("brake")
+				self.playerSpeed = max(self.playerSpeed - PLAYER_SPEED_INCREMENT * elapsedTime, 0)
 
+			# Draw
 			self.draw()
+
+			# Update speed and distance
+			elapsedTime = time.time() - lastDraw
+			lastDraw = time.time()
+			self.distance = self.distance + self.playerSpeed * elapsedTime
 
 			# Calculate FPS
 			frames = frames + 1
@@ -103,7 +118,13 @@ class Main:
 			roadCenterPixels = (RENDER_WIDTH - roadWidth) / 2
 			kerbWidth = KERB_WIDTH * RENDER_WIDTH * perspectiveMult
 
-			sdl2.SDL_SetRenderDrawColor(self.renderer, KERB_COLOR[0], KERB_COLOR[1], KERB_COLOR[2], sdl2.SDL_ALPHA_OPAQUE)
+			# Calculate perspective: the lines near the user are taller than the one further away
+			# This is a modified sine, "stretched" based on the distance (the y axis)
+			colorModifier = 0
+			if math.sin(50.0 * math.pow(1.0 - perspectiveMult, 2) + self.distance * 30) > 0:
+				colorModifier = 64
+
+			sdl2.SDL_SetRenderDrawColor(self.renderer, KERB_COLOR[0] + colorModifier, KERB_COLOR[1] + colorModifier, KERB_COLOR[2] + colorModifier, sdl2.SDL_ALPHA_OPAQUE)
 			# Left Kerb
 			x = roadCenterPixels - roadWidthPixels / 2 - kerbWidth
 			self.drawScaledHLine(x, y, kerbWidth)
@@ -111,7 +132,7 @@ class Main:
 			x = roadCenterPixels + roadWidthPixels / 2
 			self.drawScaledHLine(x, y, kerbWidth)
 
-			sdl2.SDL_SetRenderDrawColor(self.renderer, GRASS_COLOR[0], GRASS_COLOR[1], GRASS_COLOR[2], sdl2.SDL_ALPHA_OPAQUE)
+			sdl2.SDL_SetRenderDrawColor(self.renderer, GRASS_COLOR[0] + colorModifier, GRASS_COLOR[1] + colorModifier, GRASS_COLOR[2] + colorModifier, sdl2.SDL_ALPHA_OPAQUE)
 			# Left Grass
 			xEnd = roadCenterPixels - roadWidthPixels / 2 - kerbWidth
 			self.drawScaledHLine(0, y, xEnd) # xEnd = length, because xStart = 0
