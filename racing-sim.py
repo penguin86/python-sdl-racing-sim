@@ -39,6 +39,17 @@ KERB_WIDTH = 0.05
 PLAYER_MAX_SPEED = 1.0
 PLAYER_SPEED_INCREMENT = 0.5
 
+# Track: array of sections. Section: [curvature, length]
+TRACK = [
+	{"curv": 0.0, "dist": 2},
+	{"curv": 1.0, "dist": 2},
+	{"curv": 0.0, "dist": 2},
+	{"curv": 1.0, "dist": 2},
+	{"curv": 0.0, "dist": 2},
+	{"curv": 1.0, "dist": 2},
+	{"curv": 0.0, "dist": 2},
+]
+
 class Main:
 
 	def __init__(self):
@@ -54,6 +65,9 @@ class Main:
 		# Player
 		self.playerSpeed = 0.0
 		self.distance = 0.0
+
+		# Interpolated values
+		self.interpolatedRoadCurvature = 0.0
 
 	def run(self):
 		lastFpsCalcTime = 0
@@ -78,7 +92,7 @@ class Main:
 			elif keystate[sdl2.SDL_SCANCODE_UP]:
 				self.playerSpeed = min(self.playerSpeed + PLAYER_SPEED_INCREMENT * elapsedTime, PLAYER_MAX_SPEED)
 			elif keystate[sdl2.SDL_SCANCODE_DOWN]:
-				self.playerSpeed = max(self.playerSpeed - PLAYER_SPEED_INCREMENT * elapsedTime, 0)
+				self.playerSpeed = max(self.playerSpeed - PLAYER_SPEED_INCREMENT * 4 * elapsedTime, 0) # *4: brakes more than accelerates
 
 			# Draw
 			self.draw()
@@ -111,12 +125,36 @@ class Main:
 		sdl2.SDL_SetRenderDrawColor(self.renderer, ROAD_COLOR[0], ROAD_COLOR[1], ROAD_COLOR[2], sdl2.SDL_ALPHA_OPAQUE)
 		sdl2.SDL_RenderFillRect(self.renderer, sdl2.SDL_Rect(0, int(WIN_HEIGHT/2), WIN_WIDTH, int(WIN_HEIGHT)))
 
+		# Find current track section
+		trackSectionsSumDist = 0
+		sectionNo = 0
+		currentSection = None
+		for section in TRACK:
+			trackSectionsSumDist = trackSectionsSumDist + section["dist"]
+			sectionNo = sectionNo + 1
+			if self.distance < trackSectionsSumDist:
+				currentSection = section
+				break
+
+		if not currentSection:
+			# Reached the last segment: loop back to first one
+			self.distance = 0
+			currentSection = TRACK[0]
+
+		# Calculate road center based on section
+		distanceDrivenInThisSection = self.distance - trackSectionsSumDist + currentSection["dist"]
+		interpolation = max(min(distanceDrivenInThisSection / (section["dist"] / 4), 1.0), 0.01)	# Range 0.01 - 1.0
+		self.interpolatedRoadCurvature = (currentSection["curv"] * interpolation + self.interpolatedRoadCurvature * (1 - interpolation)) / 2
+		print([sectionNo, self.interpolatedRoadCurvature, currentSection["curv"], interpolation])
+		#self.interpolatedRoadCurvature = (self.interpolatedRoadCurvature + currentSection["curv"]) / 2
+
 		# Draw road
 		for y in range(int(RENDER_HEIGHT/2), RENDER_HEIGHT):
 			perspectiveMult = (y - RENDER_HEIGHT / 2) / (RENDER_HEIGHT / 2) * 0.8 + 0.2 # Range 0.2 - 1.0
 			roadWidth = 0.6
 			roadWidthPixels = roadWidth * RENDER_WIDTH * perspectiveMult
-			roadCenterPixels = (RENDER_WIDTH - roadWidth) / 2
+			roadCenter = ((self.interpolatedRoadCurvature * 2) * math.pow(1.0 - perspectiveMult, 3)) + self.interpolatedRoadCurvature / 8
+			roadCenterPixels = roadCenter * RENDER_WIDTH + RENDER_WIDTH / 2
 			kerbWidth = KERB_WIDTH * RENDER_WIDTH * perspectiveMult
 
 			# Kerb color: Calculate perspective: the lines near the user are taller than the one further away
