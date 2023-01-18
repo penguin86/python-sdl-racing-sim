@@ -36,23 +36,29 @@ KERB_COLOR_1 = [255,0,0]
 KERB_COLOR_2 = [255,255,255]
 ROAD_COLOR = [127,127,127]
 KERB_WIDTH = 0.05
-PLAYER_MAX_SPEED = 1.0
+PLAYER_MAX_SPEED = 2.0
 PLAYER_SPEED_INCREMENT = 0.5
+TRACK_SECTIONS_INTERPOLATION_LENGTH = 2.0
 
 # Track: array of sections. Section: [curvature, length]
 TRACK = [
-	{"curv": 0.0, "dist": 2},
-	{"curv": 1.0, "dist": 2},
-	{"curv": 0.0, "dist": 2},
-	{"curv": 1.0, "dist": 2},
-	{"curv": 0.0, "dist": 2},
-	{"curv": 1.0, "dist": 2},
-	{"curv": 0.0, "dist": 2},
+	{"curv": 0.0, "dist": 1},
+	{"curv": 1.0, "dist": 5},
+	{"curv": -1.0, "dist": 5},
+	{"curv": 0.0, "dist": 1},
+	{"curv": -0.3, "dist": 4},
+	{"curv": 3.3, "dist": 4},
 ]
 
 class Main:
 
 	def __init__(self):
+		# Check data
+		for section in TRACK:
+			if section["curv"] != 0.0 and section["dist"] < TRACK_SECTIONS_INTERPOLATION_LENGTH * 2:
+				print("Track section cannot be interpolated!", section)
+				exit(1)
+
 		# Print instructions
 		print('RACING SIMULATOR by penguin86\n\nMovement: up, down, left, right\n\nFPS:')
 
@@ -143,10 +149,17 @@ class Main:
 
 		# Calculate road center based on section
 		distanceDrivenInThisSection = self.distance - trackSectionsSumDist + currentSection["dist"]
-		interpolation = max(min(distanceDrivenInThisSection / (section["dist"] / 4), 1.0), 0.01)	# Range 0.01 - 1.0
-		self.interpolatedRoadCurvature = (currentSection["curv"] * interpolation + self.interpolatedRoadCurvature * (1 - interpolation)) / 2
-		print([sectionNo, self.interpolatedRoadCurvature, currentSection["curv"], interpolation])
-		#self.interpolatedRoadCurvature = (self.interpolatedRoadCurvature + currentSection["curv"]) / 2
+		if distanceDrivenInThisSection < TRACK_SECTIONS_INTERPOLATION_LENGTH:
+			# First part: interpolates from straight to current section curvature value
+			self.interpolatedRoadCurvature = currentSection["curv"] * (distanceDrivenInThisSection / TRACK_SECTIONS_INTERPOLATION_LENGTH)
+			print('enter', (distanceDrivenInThisSection / TRACK_SECTIONS_INTERPOLATION_LENGTH))
+		elif distanceDrivenInThisSection > currentSection["dist"] - TRACK_SECTIONS_INTERPOLATION_LENGTH:
+			# Last part: interpolates from current section curvature value to straight
+			delta = currentSection["dist"] - TRACK_SECTIONS_INTERPOLATION_LENGTH
+			distanceDrivenInThisPart = distanceDrivenInThisSection - delta
+			self.interpolatedRoadCurvature = currentSection["curv"] * (1 - (distanceDrivenInThisPart / TRACK_SECTIONS_INTERPOLATION_LENGTH))
+			#print([sectionNo, 'LAST', self.interpolatedRoadCurvature, currentSection["curv"]])
+			print(['exit', ((distanceDrivenInThisPart / TRACK_SECTIONS_INTERPOLATION_LENGTH)), delta, distanceDrivenInThisPart, distanceDrivenInThisSection])
 
 		# Draw road
 		for y in range(int(RENDER_HEIGHT/2), RENDER_HEIGHT):
