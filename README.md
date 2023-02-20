@@ -2,9 +2,11 @@
 
 A simple racing simulator similar to the ones in the '80s. Inspired by [OneLoneCoder's one](https://www.youtube.com/watch?v=KkMZI5Jbf18). Written in python and SDL.
 
+![Screenshot](screenshots/screenshot.png)
+
 ## Missing/TODO:
 
-Add a car
+Add a car (WIP)
 
 ## Assets attribution
 
