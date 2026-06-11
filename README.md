@@ -1,5 +1,8 @@
 # Python racing simulator
 
+> This project was moved to [my private git server](https://git.ichibi.eu/penguin86/python-sdl-racing-sim) . This repository may not be up to date.
+> This is a personal project, probably of little use for others, and I don't currently accept contributions on it. Anyway, feel free to contact me if you have any idea.
+
 A simple racing simulator similar to the ones in the '80s. Inspired by [OneLoneCoder's one](https://www.youtube.com/watch?v=KkMZI5Jbf18). Written in python and SDL.
 
 ![Screenshot](screenshots/screenshot.png)
